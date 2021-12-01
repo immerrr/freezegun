@@ -167,14 +167,17 @@ def _should_use_real_time():
 
 
 def get_current_time():
+    if not freeze_factories or _should_use_real_time():
+        # Need to use utcnow, because "fake_time" uses timegm, which assumes
+        # the time is in UTC?
+        return real_datetime.utcnow()
     return freeze_factories[-1]()
 
 
 def fake_time():
-    if _should_use_real_time():
-        return real_time()
     current_time = get_current_time()
     return calendar.timegm(current_time.timetuple()) + current_time.microsecond / 1000000.0
+
 
 if _TIME_NS_PRESENT:
     def fake_time_ns():
@@ -186,8 +189,6 @@ if _TIME_NS_PRESENT:
 def fake_localtime(t=None):
     if t is not None:
         return real_localtime(t)
-    if _should_use_real_time():
-        return real_localtime()
     shifted_time = get_current_time() - datetime.timedelta(seconds=time.timezone)
     return shifted_time.timetuple()
 
@@ -195,8 +196,6 @@ def fake_localtime(t=None):
 def fake_gmtime(t=None):
     if t is not None:
         return real_gmtime(t)
-    if _should_use_real_time():
-        return real_gmtime()
     return get_current_time().timetuple()
 
 
@@ -322,12 +321,8 @@ class FakeDate(real_date, metaclass=FakeDateMeta):
 
     @classmethod
     def today(cls):
-        result = cls._date_to_freeze() + cls._tz_offset()
+        result = get_current_time() + cls._tz_offset()
         return date_to_fakedate(result)
-
-    @staticmethod
-    def _date_to_freeze():
-        return get_current_time()
 
     @classmethod
     def _tz_offset(cls):
@@ -383,7 +378,7 @@ class FakeDatetime(real_datetime, FakeDate, metaclass=FakeDatetimeMeta):
 
     @classmethod
     def now(cls, tz=None):
-        now = cls._time_to_freeze() or real_datetime.now()
+        now = get_current_time()
         if tz:
             result = tz.fromutc(now.replace(tzinfo=tz)) + cls._tz_offset()
         else:
@@ -407,13 +402,8 @@ class FakeDatetime(real_datetime, FakeDate, metaclass=FakeDatetimeMeta):
 
     @classmethod
     def utcnow(cls):
-        result = cls._time_to_freeze() or real_datetime.utcnow()
+        result = get_current_time()
         return datetime_to_fakedatetime(result)
-
-    @staticmethod
-    def _time_to_freeze():
-        if freeze_factories:
-            return get_current_time()
 
     @classmethod
     def _tz_offset(cls):
