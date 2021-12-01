@@ -714,24 +714,34 @@ def test_should_use_real_time():
 
     with freeze_time(frozen):
         assert time.time() == expected_frozen
+        assert datetime.datetime.now() == frozen
+        assert datetime.date.today() == frozen.date()
         # assert time.localtime() == expected_frozen_local
         assert time.gmtime() == expected_frozen_gmt
+        assert time.monotonic() == expected_frozen
         if HAS_CLOCK:
             assert time.clock() == expected_clock
         if HAS_TIME_NS:
             assert time.time_ns() == expected_frozen * 1e9
+        if HAS_MONOTONIC_NS:
+            assert time.monotonic_ns() == expected_frozen * 1e9
 
         assert calendar.timegm(time.gmtime()) == expected_frozen
         assert calendar.timegm(time_tuple) == timestamp_to_convert
 
     with freeze_time(frozen, ignore=['_pytest']):
         assert time.time() != expected_frozen
+        assert datetime.datetime.now() != frozen
+        assert datetime.date.today() != frozen.date()
         # assert time.localtime() != expected_frozen_local
         assert time.gmtime() != expected_frozen_gmt
+        assert time.monotonic() != expected_frozen
         if HAS_CLOCK:
             assert time.clock() != expected_clock
         if HAS_TIME_NS:
             assert time.time_ns() != expected_frozen * 1e9
+        if HAS_MONOTONIC_NS:
+            assert time.monotonic_ns() != expected_frozen * 1e9
 
         assert calendar.timegm(time.gmtime()) != expected_frozen
         assert calendar.timegm(time_tuple) == timestamp_to_convert
