@@ -29,6 +29,9 @@ _PERF_COUNTER_NS_PRESENT = hasattr(time, 'perf_counter_ns')
 _EPOCH = datetime.datetime(1970, 1, 1)
 _EPOCHTZ = datetime.datetime(1970, 1, 1, tzinfo=dateutil.tz.UTC)
 
+if 'fake_time' in str(time.time):
+    raise NotImplementedError
+
 real_time = time.time
 real_localtime = time.localtime
 real_gmtime = time.gmtime
@@ -37,6 +40,7 @@ real_perf_counter = time.perf_counter
 real_strftime = time.strftime
 real_date = datetime.date
 real_datetime = datetime.datetime
+real_datetime_utcnow = datetime.datetime.utcnow
 real_date_objects = [real_time, real_localtime, real_gmtime, real_monotonic, real_perf_counter, real_strftime, real_date, real_datetime]
 
 if _TIME_NS_PRESENT:
@@ -170,7 +174,7 @@ def get_current_time():
     if not freeze_factories or _should_use_real_time():
         # Need to use utcnow, because "fake_time" uses timegm, which assumes
         # the time is in UTC?
-        return real_datetime.utcnow()
+        return real_datetime_utcnow()
     return freeze_factories[-1]()
 
 
@@ -225,6 +229,7 @@ def fake_monotonic():
 
 
 def fake_perf_counter():
+    print(str(real_perf_counter))
     if _should_use_real_time():
         return real_perf_counter()
 
@@ -607,6 +612,7 @@ class _freeze_time:
 
     def start(self):
 
+        print('start', real_datetime_utcnow)
         if self.auto_tick_seconds:
             freeze_factory = StepTickTimeFactory(self.time_to_freeze, self.auto_tick_seconds)
         elif self.tick:
@@ -696,9 +702,13 @@ class _freeze_time:
                         setattr(module, attribute_name, fake)
                         add_change((module, attribute_name, attribute_value))
 
+        print('start', real_datetime_utcnow)
+
         return freeze_factory
 
     def stop(self):
+        print('stop', real_datetime_utcnow)
+
         freeze_factories.pop()
         ignore_lists.pop()
         tick_flags.pop()
@@ -761,6 +771,7 @@ class _freeze_time:
                 setattr(uuid, uuid_generate_time_attr, real_uuid_generate_time)
             uuid._UuidCreate = real_uuid_create
             uuid._last_timestamp = None
+        print('stop', real_datetime_utcnow)
 
     def decorate_coroutine(self, coroutine):
         return wrap_coroutine(self, coroutine)

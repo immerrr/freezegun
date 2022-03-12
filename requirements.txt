@@ -3,3 +3,4 @@ pytest-coverage
 coveralls
 python-dateutil >= 2.7
 maya; python_version >= '3.7'
+pudb
