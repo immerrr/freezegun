@@ -1,0 +1,52 @@
+# Python package
+# Create and test a Python package on multiple Python versions.
+# Add steps that analyze code, save the dist with the build record, publish to a PyPI-compatible index, and more:
+# https://docs.microsoft.com/azure/devops/pipelines/languages/python
+
+trigger:
+- master
+
+strategy:
+  matrix:
+    linux-py36:
+      python.version: '3.6'
+      image: ubuntu-latest
+    linux-py37:
+      python.version: '3.7'
+      image: ubuntu-latest
+    linux-py38:
+      python.version: '3.8'
+      image: ubuntu-latest
+    linux-py39:
+      python.version: '3.9'
+      image: ubuntu-latest
+    win-py36:
+      python.version: '3.6'
+      image: windows-latest
+    win-py39:
+      python.version: '3.9'
+      image: windows-latest
+    mac-py36:
+      python.version: '3.6'
+      image: macos-latest
+    mac-py39:
+      python.version: '3.9'
+      image: macos-latest
+
+pool:
+  vmImage: $(image)
+
+
+steps:
+- task: UsePythonVersion@0
+  inputs:
+    versionSpec: '$(python.version)'
+  displayName: 'Use Python $(python.version)'
+
+- script: |
+    python -m pip install --upgrade pip tox python-dateutil
+  displayName: 'Install dependencies'
+
+- script: |
+    tox -e py
+  displayName: 'Test'
